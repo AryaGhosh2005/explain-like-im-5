@@ -33,15 +33,13 @@ st.markdown(
 st.markdown("---")
 
 # ---------------- API CONFIG ----------------
-# Get API key from Streamlit Secrets
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     st.error("API key not found. Please add GEMINI_API_KEY in Streamlit Secrets.")
     st.stop()
 
-# Configure Gemini API
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("models/gemini-2.5-flash")  # Model that supports generateContent
+model = genai.GenerativeModel("models/gemini-2.5-flash")  # Works for generateContent
 
 # ---------------- FUNCTION ----------------
 def explain_like_five(text: str) -> str:
@@ -93,9 +91,14 @@ if st.session_state.explanation:
     st.markdown("---")
     st.subheader("🌈 Easy Explanation")
     st.markdown(
-        f"""
-        <div style="
+        f"""<div style="
             background-color:#f9f9f9;
             padding:20px;
             border-radius:10px;
             border-left:5px solid #ffcc00;
+            font-size:16px;
+        ">
+        {st.session_state.explanation}
+        </div>""",
+        unsafe_allow_html=True
+    )
