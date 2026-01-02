@@ -1,10 +1,11 @@
 import streamlit as st
 import os
 import google.generativeai as genai
+import PyPDF2
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="Explain / Top Questions",
+    page_title="AI Helper",
     page_icon="🧸❓",
     layout="centered"
 )
@@ -21,13 +22,14 @@ with st.sidebar:
     st.markdown("- Streamlit")
     st.markdown("- Python")
     st.markdown("- Gemini AI")
+    st.markdown("- PyPDF2")
     st.markdown("---")
-    st.caption("⚠️ Educational MVP")
+    st.caption("⚠️ MVP")
 
 # ---------------- HEADER ----------------
 st.markdown(
     "<h1 style='text-align:center;'>🧸❓ AI Helper</h1>"
-    "<p style='text-align:center; color: gray;'>Choose a mode and enter text</p>",
+    "<p style='text-align:center; color: gray;'>Paste text, upload PDF, or enter a topic and choose a mode</p>",
     unsafe_allow_html=True
 )
 st.markdown("---")
@@ -39,7 +41,7 @@ if not API_KEY:
     st.stop()
 
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("models/gemini-2.5-flash")  # works for generateContent
+model = genai.GenerativeModel("models/gemini-2.5-flash")  # Supports generateContent
 
 # ---------------- FUNCTIONS ----------------
 def explain_like_five(text: str) -> str:
@@ -52,8 +54,8 @@ def explain_like_five(text: str) -> str:
     try:
         response = model.generate_content(prompt)
         return response.text
-    except Exception:
-        return "AI failed to generate explanation. Check your API key and quota."
+    except Exception as e:
+        return f"AI failed: {str(e)}"
 
 def generate_top_questions(topic: str) -> str:
     prompt = (
@@ -63,32 +65,51 @@ def generate_top_questions(topic: str) -> str:
     try:
         response = model.generate_content(prompt)
         return response.text
-    except Exception:
-        return "AI failed to generate questions. Check your API key and quota."
+    except Exception as e:
+        return f"AI failed: {str(e)}"
 
 # ---------------- MODE SELECTION ----------------
 mode = st.radio("Choose a mode:", ["Explain Like I'm 5", "Top 10 Questions"])
 
-# ---------------- INPUT AREA ----------------
-user_text = st.text_area(
-    "Enter text or topic:",
-    height=200,
-    placeholder="Type a sentence or topic here..."
-)
+# ---------------- INPUT OPTIONS ----------------
+input_option = st.radio("Input type:", ["Paste Text", "Upload PDF"])
+
+user_text = ""
+
+if input_option == "Paste Text":
+    user_text = st.text_area(
+        "Enter text or topic:",
+        height=200,
+        placeholder="Type a sentence, paragraph, or topic here..."
+    )
+elif input_option == "Upload PDF":
+    uploaded_file = st.file_uploader("📄 Upload a PDF", type=["pdf"])
+    if uploaded_file is not None:
+        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+        pages_text = []
+        for page in pdf_reader.pages:
+            text = page.extract_text()
+            if text:
+                pages_text.append(text)
+        user_text = "\n".join(pages_text)
+        st.text_area("📄 Extracted PDF Text:", user_text, height=200)
+
+char_count = len(user_text)
+st.caption(f"Characters: {char_count}")
 
 # ---------------- SESSION STATE ----------------
 if "result" not in st.session_state:
     st.session_state.result = ""
 
 # ---------------- BUTTON ----------------
-col1, col2, col3 = st.columns([1, 2, 1])
+col1, col2, col3 = st.columns([1,2,1])
 with col2:
     action_clicked = st.button("🚀 Generate", use_container_width=True)
 
 # ---------------- LOGIC ----------------
 if action_clicked:
     if user_text.strip() == "":
-        st.warning("Please enter some text first.")
+        st.warning("Please provide some text or upload a PDF first.")
     else:
         with st.spinner("🧠 AI is thinking..."):
             if mode == "Explain Like I'm 5":
