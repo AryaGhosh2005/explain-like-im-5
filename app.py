@@ -1,6 +1,6 @@
 import streamlit as st
-import google.generativeai as genai
 import os
+import google.generativeai as genai
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -13,67 +13,66 @@ st.set_page_config(
 with st.sidebar:
     st.title("🧸 Explain Like I'm 5")
     st.write(
-        "This AI tool explains complex text "
-        "in very simple words — like teaching a 5-year-old."
+        "Paste any text and get a simple explanation "
+        "as if you are explaining it to a 5-year-old."
     )
     st.markdown("---")
-    st.markdown("**Built using:**")
-    st.markdown("- Gemini API")
+    st.markdown("**Built with:**")
     st.markdown("- Streamlit")
     st.markdown("- Python")
+    st.markdown("- Gemini AI")
     st.markdown("---")
     st.caption("⚠️ Educational MVP")
 
-# ---------------- MAIN HEADER ----------------
+# ---------------- HEADER ----------------
 st.markdown(
-    """
-    <h1 style="text-align:center;">🧸 Explain Like I'm 5</h1>
-    <p style="text-align:center; color: gray;">
-    Paste any text and get a super simple explanation
-    </p>
-    """,
+    "<h1 style='text-align:center;'>🧸 Explain Like I'm 5</h1>"
+    "<p style='text-align:center; color: gray;'>Paste text below and get a simple explanation</p>",
     unsafe_allow_html=True
 )
-
 st.markdown("---")
 
-# ---------------- API KEY ----------------
+# ---------------- API CONFIG ----------------
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
-    st.error("API key not found. Please add GEMINI_API_KEY in Streamlit Secrets.")
+    st.error("API key not found. Add GEMINI_API_KEY in Streamlit Secrets.")
     st.stop()
 
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("models/gemini-2.5-flash")
+model = genai.GenerativeModel("models/gemini-2.5-flash")  # Works for generateContent
 
 # ---------------- FUNCTION ----------------
-def explain_like_five(text):
+def explain_like_five(text: str) -> str:
     prompt = (
         "Explain the following text like you are talking "
         "to a 5-year-old child. Use very simple words, "
         "short sentences, and friendly examples.\n\n"
         + text
     )
-    return model.generate_content(prompt).text
+    response = model.generate_content(prompt)
+    return response.text
 
 # ---------------- INPUT AREA ----------------
 MAX_CHARS = 1000
-
 user_text = st.text_area(
-    "📄 Paste your text below",
-    height=220,
+    "📄 Paste your text here",
+    height=200,
     placeholder="Example: Newton's First Law states that an object will remain at rest..."
 )
 
 char_count = len(user_text)
 st.caption(f"Characters: {char_count}/{MAX_CHARS}")
 
+# ---------------- SESSION STATE ----------------
+if "explanation" not in st.session_state:
+    st.session_state.explanation = ""
+
 # ---------------- BUTTON ----------------
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     explain_clicked = st.button("✨ Explain Simply", use_container_width=True)
 
-# ---------------- OUTPUT ----------------
+# ---------------- EXPLANATION LOGIC ----------------
 if explain_clicked:
     if user_text.strip() == "":
         st.warning("Please paste some text first.")
@@ -81,26 +80,30 @@ if explain_clicked:
         st.warning("Please keep the text under 1000 characters.")
     else:
         with st.spinner("🧠 Thinking like a friendly teacher..."):
-            explanation = explain_like_five(user_text)
+            try:
+                st.session_state.explanation = explain_like_five(user_text)
+            except Exception:
+                st.session_state.explanation = "Oops! Something went wrong."
 
-        st.markdown("---")
-        st.subheader("🌈 Simple Explanation")
+# ---------------- DISPLAY RESULT ----------------
+if st.session_state.explanation:
+    st.markdown("---")
+    st.subheader("🌈 Easy Explanation")
+    explanation_html = f"""
+    <div style="
+        background-color:#f9f9f9;
+        padding:20px;
+        border-radius:10px;
+        border-left:5px solid #ffcc00;
+        font-size:16px;
+    ">
+    {st.session_state.explanation}
+    </div>
+    """
+    st.markdown(explanation_html, unsafe_allow_html=True)
 
-        st.markdown(
-            f"""
-            <div style="
-                background-color:#f9f9f9;
-                padding:20px;
-                border-radius:10px;
-                border-left:5px solid #ffcc00;
-                font-size:16px;
-            ">
-            {explanation}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    # ---------------- COPY BUTTON ----------------
+    st.button("📋 Copy to Clipboard", key="copy_button", on_click=lambda: st.experimental_set_query_params(copy=st.session_state.explanation))
+    st.caption("Click the button to copy the explanation.")
 
-# ---------------- FOOTER ----------------
-st.markdown("---")
-st.caption("🚀 MVP built for learning and experimentation")
+
