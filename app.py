@@ -24,7 +24,7 @@ with st.sidebar:
     st.markdown("- Gemini AI")
     st.markdown("- PyPDF2")
     st.markdown("---")
-    st.caption("⚠️ MVP")
+    st.caption("⚠️ MVP made for showcasing")
 
 # ---------------- HEADER ----------------
 st.markdown(
