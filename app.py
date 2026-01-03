@@ -69,12 +69,12 @@ def generate_top_questions(topic: str) -> str:
         return f"⚠️ AI could not generate output: {str(e)}"
 
 # ---------------- MODE SELECTION ----------------
-tab1, tab2 = st.tabs(["🧸 Explain Like I'm 5", "❓ Top 10 Questions"])
+mode = st.radio(
+    "Choose what you want:",
+    ["Explain Like I'm 5", "Top 10 Questions"],
+    horizontal=True
+)
 
-if tab1:
-    mode = "Explain Like I'm 5"
-if tab2:
-    mode = "Top 10 Questions"
 
 
 # ---------------- INPUT OPTIONS ----------------
