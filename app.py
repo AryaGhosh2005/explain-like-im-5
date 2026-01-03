@@ -29,7 +29,7 @@ with st.sidebar:
 # ---------------- HEADER ----------------
 st.markdown(
     "<h1 style='text-align:center;'>🧸❓ AI Helper</h1>"
-    "<p style='text-align:center; color: gray;'>Paste text, upload PDF, or enter a topic and choose a mode</p>",
+    "<p style='text-align:center; color: gray;'>Paste text or upload a PDF, then choose a mode</p>",
     unsafe_allow_html=True
 )
 st.markdown("---")
@@ -55,7 +55,7 @@ def explain_like_five(text: str) -> str:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"AI failed: {str(e)}"
+        return f"⚠️ AI could not generate output: {str(e)}"
 
 def generate_top_questions(topic: str) -> str:
     prompt = (
@@ -66,7 +66,7 @@ def generate_top_questions(topic: str) -> str:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"AI failed: {str(e)}"
+        return f"⚠️ AI could not generate output: {str(e)}"
 
 # ---------------- MODE SELECTION ----------------
 mode = st.radio("Choose a mode:", ["Explain Like I'm 5", "Top 10 Questions"])
@@ -83,16 +83,23 @@ if input_option == "Paste Text":
         placeholder="Type a sentence, paragraph, or topic here..."
     )
 elif input_option == "Upload PDF":
-    uploaded_file = st.file_uploader("📄 Upload a PDF", type=["pdf"])
+    uploaded_file = st.file_uploader(
+        "📄 Upload a PDF",
+        type=["pdf"],
+        help="Select a PDF file from your device"
+    )
     if uploaded_file is not None:
-        pdf_reader = PyPDF2.PdfReader(uploaded_file)
-        pages_text = []
-        for page in pdf_reader.pages:
-            text = page.extract_text()
-            if text:
-                pages_text.append(text)
-        user_text = "\n".join(pages_text)
-        st.text_area("📄 Extracted PDF Text:", user_text, height=200)
+        try:
+            pdf_reader = PyPDF2.PdfReader(uploaded_file)
+            pages_text = []
+            for page in pdf_reader.pages:
+                text = page.extract_text()
+                if text:
+                    pages_text.append(text)
+            user_text = "\n".join(pages_text)
+            st.text_area("📄 Extracted PDF Text:", user_text, height=200)
+        except Exception as e:
+            st.error(f"Failed to read PDF: {e}")
 
 char_count = len(user_text)
 st.caption(f"Characters: {char_count}")
